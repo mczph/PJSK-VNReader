@@ -11,7 +11,7 @@ Windows 用户可在 [Releases](https://github.com/mczph/PJSK-VNReader/releases)
 - [完整使用说明](docs/USER_GUIDE.md)：剧情、快捷键、存档、画质、下载与缓存管理。
 - [开发与打包](docs/DEVELOPMENT.md)：源码运行、测试、CI 和发布步骤。
 - [架构说明](docs/ARCHITECTURE.md)：桌面服务、剧本演出、音频生命周期与数据存储。
-- [更新记录](CHANGELOG.md)：当前版本为 **0.1.6**。
+- [更新记录](CHANGELOG.md)：当前版本为 **0.1.7**。
 
 ## 功能
 

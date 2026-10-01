@@ -86,7 +86,7 @@ npm run test:desktop
 验证指定的便携版：
 
 ```powershell
-$env:SEKAI_TEST_EXE = (Resolve-Path 'release/SEKAI-NOVEL-0.1.6-x64.exe').Path
+$env:SEKAI_TEST_EXE = (Resolve-Path 'release/SEKAI-NOVEL-0.1.7-x64.exe').Path
 $env:SEKAI_TEST_DATA_DIR = 'artifacts/packaged-desktop-vn'
 npm run test:desktop
 ```
