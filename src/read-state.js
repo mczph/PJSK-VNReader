@@ -1,0 +1,1 @@
+export function chapterStatus(entry,region,progress,history){const key=region+':'+entry.id,p=progress[key] || {},total=p.total || 0,seen=new Set((history[key] || []).filter(i=>Number.isInteger(i)&&i>=0&&(!total||i<total))).size;const complete=!!p.markedRead || !!(total&&seen>=total);return {complete,seen,total,percent:total?Math.min(100,Math.round(seen/total*100)):0};}

@@ -1,0 +1,28 @@
+node_modules/
+dist/
+.cache/
+.reference/
+release/
+artifacts/
+*-sample.json
+
+# Local credentials, personal data and editor state
+.env
+.env.*
+!.env.example
+.npmrc
+*.pem
+*.key
+reader-state.json
+SEKAI-NOVEL-saves*.json
+.vscode/
+.idea/
+
+# Temporary files and test output
+*.log
+*.tmp
+coverage/
+playwright-report/
+test-results/
+Thumbs.db
+.DS_Store

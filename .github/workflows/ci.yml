@@ -1,0 +1,31 @@
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install chromium
+      - name: Reading and audio lifecycle
+        run: node scripts/advance-smoke.mjs
+      - name: Menu BGM and keyboard shortcuts
+        run: node scripts/shortcuts-smoke.mjs
+      - name: Unit music transitions
+        run: node scripts/unit-bgm-smoke.mjs

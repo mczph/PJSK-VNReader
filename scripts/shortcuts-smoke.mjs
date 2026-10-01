@@ -1,0 +1,35 @@
+import {chromium} from '@playwright/test';
+import assert from 'node:assert/strict';
+import express from 'express';
+import {normalizeStory} from '../server/story.js';
+const entry={id:'shortcut-fixture',type:'main',title:'快捷键检查',chapter:'测试'};
+const fixture={...normalizeStory({ScenarioId:'keys',TalkData:Array.from({length:20},(_,i)=>({WindowDisplayName:'一歌',Body:`对白 ${i+1}`,Voices:i===0?[{VoiceId:'voice'}]:[]})),Snippets:Array.from({length:20},(_,i)=>({Action:1,ReferenceIndex:i}))}),entry,region:'jp',live2d:[]};
+const rate=8000,bytes=rate*12*2,wav=Buffer.alloc(44+bytes);wav.write('RIFF');wav.writeUInt32LE(36+bytes,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(rate,24);wav.writeUInt32LE(rate*2,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(bytes,40);
+const app=express();app.get('/api/catalog',(_req,res)=>res.json([]));app.post('/api/prepare/:id',(_req,res)=>res.json({key:'fixture'}));app.get('/api/jobs/:id',(_req,res)=>res.json({status:'ready',missing:[],story:fixture}));app.get('/assets/jp/*asset',(req,res)=>req.path.endsWith('.mp3')?res.type('wav').send(wav):res.status(404).end());app.use(express.static('dist'));
+const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const browser=await chromium.launch();
+try{
+ const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.addInitScript(entry=>{localStorage.setItem('sekai.resume',JSON.stringify({entry,index:0,region:'jp'}));localStorage.setItem('sekai.settings',JSON.stringify({speed:0,autoDelay:6000,live2d:false,bgm:17}));window.sounds=[];const Original=window.Audio;window.Audio=function(...args){const audio=new Original(...args);window.sounds.push(audio);return audio;};window.Audio.prototype=Original.prototype;window.testHidden=false;Object.defineProperty(document,'hidden',{get:()=>window.testHidden});},entry);
+ await page.goto(`http://127.0.0.1:${server.address().port}`);await page.locator('.title-brand').click();
+ await page.waitForFunction(()=>window.sounds.some(a=>a.src.includes('bgm00018')&&!a.paused&&a.currentTime>.1));
+ assert.equal(await page.evaluate(()=>window.sounds[0].loop&&window.sounds[0].volume===.17),true);
+ await page.evaluate(()=>{window.testHidden=true;document.dispatchEvent(new Event('visibilitychange'));});await page.waitForFunction(()=>window.sounds.every(a=>a.paused));
+ await page.evaluate(()=>{window.testHidden=false;document.dispatchEvent(new Event('visibilitychange'));});await page.waitForFunction(()=>window.sounds.some(a=>!a.paused));
+ await page.getByRole('button',{name:'继续故事',exact:true}).click();await page.locator('.dialogue').waitFor();assert.equal(await page.evaluate(()=>window.sounds[0].paused),true);
+ await page.keyboard.press('a');assert.ok(await page.getByRole('button',{name:'自动',exact:true}).evaluate(e=>e.classList.contains('on')));await page.keyboard.press('a');
+ await page.keyboard.press('Shift+S');await page.getByRole('heading',{name:'保存这一刻',exact:true}).waitFor();await page.keyboard.press('Escape');
+ await page.keyboard.press('s');await page.waitForFunction(()=>JSON.parse(localStorage.getItem('sekai.saves'))?.['快速']);
+ await page.keyboard.press('ArrowRight');await page.waitForFunction(()=>JSON.parse(localStorage.getItem('sekai.resume')).index===1);
+ await page.keyboard.press('F9');await page.waitForFunction(()=>JSON.parse(localStorage.getItem('sekai.resume')).index===0);await page.locator('.dialogue').waitFor();
+ await page.keyboard.press('l');await page.getByRole('heading',{name:'读取存档',exact:true}).waitFor();await page.keyboard.press('Escape');
+ await page.keyboard.press('b');await page.locator('.backlog-modal').waitFor();const input=page.locator('.backlog-modal input').first();await input.fill('a b s');assert.equal(await page.locator('.backlog-modal').count(),1);await input.blur();await page.keyboard.press('Escape');
+ await page.keyboard.press('j');await page.getByRole('heading',{name:'剧情跳转',exact:true}).waitFor();await page.keyboard.press('Escape');
+ await page.keyboard.press('h');await page.getByRole('button',{name:'显示对白',exact:true}).waitFor();await page.keyboard.press('Space');assert.equal(await page.getByRole('button',{name:'显示对白',exact:true}).count(),0);
+ await page.keyboard.press('v');await page.waitForFunction(()=>window.sounds.some(a=>a.src.includes('/voice/keys/')&&!a.paused));
+ await page.keyboard.down('Control');assert.ok(await page.getByRole('button',{name:'快进',exact:true}).evaluate(e=>e.classList.contains('on')));await page.keyboard.up('Control');assert.equal(await page.getByRole('button',{name:'快进',exact:true}).evaluate(e=>e.classList.contains('on')),false);
+ await page.keyboard.press('k');assert.ok(await page.getByRole('button',{name:'快进',exact:true}).evaluate(e=>e.classList.contains('on')));await page.keyboard.press('k');
+ await page.keyboard.press('F5');await page.waitForFunction(()=>JSON.parse(localStorage.getItem('sekai.saves'))?.['快速']);assert.equal(await page.locator('.vn-screen').count(),1);
+ await page.keyboard.press('f');await page.waitForFunction(()=>!!document.fullscreenElement);await page.keyboard.press('f');await page.waitForFunction(()=>!document.fullscreenElement);
+ await page.keyboard.press('Escape');await page.getByText('键盘快捷键',{exact:true}).waitFor();assert.deepEqual(errors,[]);
+ console.log(JSON.stringify({realHomeBgm:true,homeVolume:true,homeBackgroundPause:true,homeStopsOnExit:true,auto:true,saveLoad:true,quickSaveLoad:true,backlogAndTyping:true,jump:true,voiceReplay:true,hide:true,holdAndToggleSkip:true,fullscreen:true,help:true}));
+}finally{await browser.close();await new Promise(r=>server.close(r));}

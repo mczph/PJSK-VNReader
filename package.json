@@ -1,0 +1,83 @@
+{
+  "name": "sekai-novel",
+  "version": "0.1.5",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"node --use-env-proxy server/index.js\" \"vite --host 127.0.0.1\"",
+    "build": "vite build",
+    "start": "node --use-env-proxy server/index.js",
+    "test": "node --test tests/*.test.js",
+    "test:browser": "node scripts/smoke.mjs",
+    "test:effects": "node scripts/effects-smoke.mjs",
+    "test:reader": "node scripts/reader-smoke.mjs",
+    "test:click-voice": "node scripts/click-voice-smoke.mjs",
+    "test:library": "node scripts/library-smoke.mjs",
+    "test:resources": "node scripts/resource-manager-smoke.mjs",
+    "test:regional": "node scripts/regional-smoke.mjs",
+    "desktop": "npm run build && node desktop/launch.mjs",
+    "desktop:dev": "node desktop/launch.mjs",
+    "desktop:pack": "npm run build && electron-builder --win dir",
+    "desktop:build": "npm run build && electron-builder --win portable",
+    "test:desktop": "node scripts/desktop-cdp-smoke.mjs",
+    "test:personal": "node scripts/personal-smoke.mjs",
+    "branding:icons": "node scripts/build-icons.mjs"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "lucide-react": "^0.468.0",
+    "pixi-live2d-display": "^0.4.0",
+    "pixi.js": "^6.5.10",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "concurrently": "^9.2.0",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "vite": "^7.1.0"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "overrides": {
+    "gh-pages": "^6.3.0"
+  },
+  "main": "desktop/main.mjs",
+  "description": "SEKAI NOVEL",
+  "author": "SEKAI NOVEL",
+  "build": {
+    "appId": "cc.sekainovel.desktop",
+    "productName": "SEKAI NOVEL",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "desktop/**/*",
+      "server/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "SEKAI-NOVEL-${version}-${arch}.${ext}",
+      "signAndEditExecutable": true,
+      "signExecutable": false,
+      "icon": "desktop/assets/icon.ico"
+    },
+    "portable": {
+      "requestExecutionLevel": "user"
+    },
+    "npmRebuild": false,
+    "copyright": "Copyright © 2026 SEKAI NOVEL contributors"
+  }
+}
