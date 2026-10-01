@@ -1,0 +1,2 @@
+import React from 'react';
+export default function PlayerLayoutSetting({settings,setSettings}){return <label className="setting"><b>播放器画面比例</b><select aria-label="播放器画面比例" value={settings.screenFit || 'contain'} onChange={e=>setSettings(s=>({...s,screenFit:e.target.value}))}><option value="contain">完整显示 · 保持 16:9</option><option value="cover">填满屏幕 · 裁切边缘</option></select><p>裁切模式保持演出比例，适配屏幕尺寸；对白和操作栏始终完整显示。</p></label>;}

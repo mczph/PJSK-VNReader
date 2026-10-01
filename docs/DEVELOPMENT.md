@@ -86,7 +86,7 @@ npm run test:desktop
 验证指定的便携版：
 
 ```powershell
-$env:SEKAI_TEST_EXE = (Resolve-Path 'release/SEKAI-NOVEL-0.1.5-x64.exe').Path
+$env:SEKAI_TEST_EXE = (Resolve-Path 'release/SEKAI-NOVEL-0.1.6-x64.exe').Path
 $env:SEKAI_TEST_DATA_DIR = 'artifacts/packaged-desktop-vn'
 npm run test:desktop
 ```
@@ -101,7 +101,7 @@ node --use-env-proxy scripts/image-quality-audit.mjs
 
 ## CI
 
-GitHub Actions 在 Windows 与 Node.js 24 上安装锁定依赖，运行基础测试、前端构建与三个隔离的交互回归。CI 不打包 exe，不读取用户存档，也不下载真实游戏素材。
+GitHub Actions 在 Windows 与 Node.js 24 上安装锁定依赖，运行基础测试、前端构建与四个隔离的交互回归。CI 不打包 exe，不读取用户存档，也不下载真实游戏素材。
 
 工作流使用官方 [actions/checkout](https://github.com/actions/checkout) 与 [actions/setup-node](https://github.com/actions/setup-node)。
 

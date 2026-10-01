@@ -6,6 +6,8 @@ import NovelPlayer from './NovelPlayer';
 import ReaderAppearance,{restoreFont} from './ReaderAppearance';
 import Backlog from './Backlog';
 import GameHome from './GameHome';
+import SaveGrid,{SaveScreen} from './SaveGrid';
+import {titleBgmPath} from '../server/unit-bgm.js';
 import ResourceManager from './ResourceManager';
 import {unlockAudio,disposeAudio} from './audio';
 import {useMenuBgm} from './useUnitBgm';
@@ -21,9 +23,10 @@ import './story-menus.css';
 import './resource-manager.css';
 import './transitions.css';
 import './cast-avatars.css';
+import './presentation.css';
 
 const units = {all:'全部组合',light_sound:'Leo/need',idol:'MORE MORE JUMP!',street:'Vivid BAD SQUAD',theme_park:'Wonderlands × Showtime',school_refusal:'25时，在Nightcord。',piapro:'VIRTUAL SINGER'};
-const defaults={region:'jp',speed:35,autoDelay:2500,bgm:45,voice:80,se:70,font:24,theme:'light',live2d:true,effects:true,performance:'balanced',interruptVoice:true,rightClick:'hide',dialogueOpacity:78,fontFamily:'sans',characterColors:{},lineDelay:0,punctuationDelay:120};
+const defaults={region:'jp',speed:35,autoDelay:2500,bgm:45,voice:80,se:70,font:24,theme:'light',live2d:true,effects:true,performance:'balanced',interruptVoice:true,rightClick:'hide',dialogueOpacity:78,fontFamily:'sans',characterColors:{},lineDelay:0,punctuationDelay:120,screenFit:'contain'};
 function read(key,fallback){if(window.sekaiDesktop?.initialState?.[key]!==undefined)return window.sekaiDesktop.initialState[key];try{return JSON.parse(localStorage.getItem(key)) ?? fallback;}catch{return fallback;}}
 function useStored(key,fallback){const [value,setValue]=useState(()=>{const saved=read(key,fallback);return key==='sekai.settings'?{...fallback,...saved}:saved;});useEffect(()=>{localStorage.setItem(key,JSON.stringify(value));window.sekaiDesktop?.writeState(key,value).catch(()=>{});},[key,value]);return [value,setValue];}
 async function api(url,options){const r=await fetch(url,options);const data=await r.json();if(!r.ok)throw new Error(data.error || '请求失败');return data;}
@@ -35,7 +38,10 @@ function App(){
  const bgmRef=useRef(null),voicesRef=useRef([]),requestRef=useRef(0),voiceEnded=useRef(true),catalogRequestRef=useRef(0),modalRef=useRef(modal);
  const [documentBackground,setDocumentBackground]=useState(document.hidden),[nativeBackground,setNativeBackground]=useState(false);
  const background=documentBackground || nativeBackground;
- useMenuBgm(page==='home'?'sound/scenario/bgm/bgm00018/bgm00018.mp3':'',settings.region,settings.bgm,background || !!download || !!modal);
+ const [libraryMusic,setLibraryMusic]=useState(titleBgmPath);
+ const libraryState=useRef({});
+ const menuMusic=page==='player'?'':page==='chapters'?libraryMusic:titleBgmPath;
+ useMenuBgm(menuMusic,settings.region,settings.bgm*(['settings','resources'].includes(page)?.4:1),background || !!download || (page==='player'&&!!modal));
  const heldSkip=useRef({active:false,previous:false});
  const fullyRevealed=useRef(null);
  useEffect(()=>{const update=()=>setDocumentBackground(document.hidden);document.addEventListener('visibilitychange',update);const unsubscribe=window.sekaiDesktop?.onBackground(setNativeBackground);return()=>{document.removeEventListener('visibilitychange',update);unsubscribe?.();};},[]);
@@ -63,7 +69,7 @@ function App(){
   }catch(e){if(request===requestRef.current){setDownload(null);setError(e.message);setNotice(e.message);}}
  }
  function continueStory(save=resume){if(save)openStory(save.entry,save.index,save.region);else{setPage('chapters');setNotice('选择一段故事，开始阅读。');}}
- function snapshot(){return {entry:story.entry,region:story.region,index,date:new Date().toISOString(),speaker:line.speaker,text};}
+ function snapshot(){return {entry:story.entry,region:story.region,index,date:new Date().toISOString(),speaker:line.speaker,text,background:line.scene?.background || ''};}
  function store(slot){setSaves(s=>({...s,[slot]:snapshot()}));setNotice('已保存至存档 '+slot);}
  function go(n,animate=false){stopVoice();const target=Math.max(0,Math.min(story.lines.length-1,n));if(target===index&&!ending){setHidden(false);return;}fullyRevealed.current=null;setVisible(0);setEnding(false);setRestore(!animate);setStageBusy(true);setIndex(target);setHidden(false);}
  function stopVoice(){voicesRef.current.forEach(a=>{a.pause();a.dataset.resumeAfterMenu='false';});voiceEnded.current=true;}
@@ -144,9 +150,9 @@ function App(){
  {error&&<div className="error">{error}<button onClick={()=>loadCatalog()}>重试</button></div>}
  {page==='home'&&<GameHome resume={resume} nav={nav} continueStory={continueStory} full={full}/>}
  {page==='resources'&&<ResourceManager region={settings.region} onHome={()=>nav('home')}/>}
- {page==='chapters'&&<ChapterLibrary bgmVolume={settings.bgm} audioPaused={background || !!download || !!modal} catalog={catalog} region={settings.region} units={units} type={type} setType={setType} unit={unit} setUnit={setUnit} search={search} setSearch={setSearch} loading={loading} refresh={()=>loadCatalog(true)} progress={readProgress} history={history} onMarkRead={markChapter} onHome={()=>nav('home')} openStory={openStory}/>}
+ {page==='chapters'&&<ChapterLibrary onMusicChange={setLibraryMusic} retainedState={libraryState.current} bgmVolume={settings.bgm} audioPaused={background || !!download || !!modal} catalog={catalog} region={settings.region} units={units} type={type} setType={setType} unit={unit} setUnit={setUnit} search={search} setSearch={setSearch} loading={loading} refresh={()=>loadCatalog(true)} progress={readProgress} history={history} onMarkRead={markChapter} onHome={()=>nav('home')} openStory={openStory}/>}
  {page==='settings'&&<GameSettings settings={settings} setSettings={setSettings} defaults={defaults} story={story} full={full} onClose={()=>nav('home')}/>}
- {page==='saves'&&<section className="content"><div className="page-title"><div><span className="eyebrow">SAVED MEMORIES</span><h1>我的存档<span className="title-dot">.</span></h1></div></div><SaveGrid saves={saves} onLoad={continueStory} onDelete={slot=>setSaves(s=>{const n={...s};delete n[slot];return n;})}/></section>}
+ {page==='saves'&&<SaveScreen saves={saves} onHome={()=>nav('home')} onLoad={continueStory} onDelete={slot=>setSaves(s=>{const n={...s};delete n[slot];return n;})}/> }
  <footer><span>SEKAI NOVEL</span><p>非官方同人阅读器 · 游戏素材 © SEGA / Colorful Palette / Crypton</p><a href="https://sekai.best" target="_blank" rel="noreferrer">RESOURCE BY SEKAI.BEST ↗</a></footer></main></>}
  {page==='player'&&story&&<NovelPlayer story={story} line={line} index={index} settings={settings} setSettings={setSettings} read={!!history[story.region+':'+story.entry.id]?.includes(index)} visible={visible} text={text} hidden={hidden} setHidden={setHidden} auto={auto} setAuto={setAuto} skip={skip} setSkip={setSkip} go={go} next={next} modal={modal} background={background} setModal={setModal} nav={nav} full={full} voicesRef={voicesRef} onSceneChange={state=>updateSceneAudio.current(state)} onBusy={setStageBusy} onWarning={setNotice} busy={stageBusy} restore={restore}/>}
  {modal&&<div className="overlay"><div className={'modal '+(modal==='settings'?'options-modal':modal==='log'?'backlog-modal':'')}><button className="modal-close icon-button" onClick={()=>setModal(null)} aria-label="关闭"><X/></button><h2>{{save:'保存这一刻',load:'读取存档',log:'Backlog · 对白记录',jump:'剧情跳转',settings:'阅读设置',end:'这一段故事，已读完。'}[modal]}</h2>{modal==='settings'&&<GameSettings settings={settings} setSettings={setSettings} defaults={defaults} story={story} compact full={full} onHome={()=>{setModal(null);nav('home');}} onClose={()=>setModal(null)} onSave={()=>setModal('save')} onLoad={()=>setModal('load')}/>}{['save','load'].includes(modal)&&<SaveGrid saves={saves} onSave={modal==='save'?store:null} onLoad={continueStory}/ >}{modal==='log'&&<Backlog story={story} indices={(history[story.region+':'+story.entry.id] || []).filter(i=>i<story.lines.length)} index={index} settings={settings} onWarning={setNotice} onJump={i=>{go(i);setModal(null);}}/>}{modal==='jump'&&<div className="jump-list"><p>选择对白跳转；未读内容会直接显示。</p>{story.lines.map((l,i)=><button key={i} className={i===index?'current':''} onClick={()=>{go(i);setModal(null);}}><small>{String(i+1).padStart(3,'0')} · {l.speaker}</small><p>{l.text.replace(/<[^>]+>/g,'')}</p></button>)}</div>}{modal==='end'&&<><p>将这份思念带到下一页。</p><button className="primary" onClick={()=>{setModal(null);nav('chapters');}}>返回章节选择<ArrowRight size={18}/></button></>}</div></div>}
@@ -154,5 +160,4 @@ function App(){
  {notice&&<div className="toast">{notice}</div>}
  </div>;
 }
-function SaveGrid({saves,onSave,onLoad,onDelete}){return <div className="save-grid">{['快速',...Array.from({length:8},(_,i)=>String(i+1))].map(slot=>{const s=saves[slot];return <div className="save-card" key={slot}><small>SLOT {slot}</small><h3>{s?.entry.title || '空白存档'}</h3><p>{s?`${s.speaker} · 第 ${s.index+1} 句`:'等待一段值得收藏的故事。'}</p>{s&&<><blockquote>{s.text.slice(0,65)}</blockquote><small>{new Date(s.date).toLocaleString('zh-CN')}</small></>}<div className="save-actions">{onSave&&<button className="secondary" onClick={()=>onSave(slot)}>保存</button>}{s&&<button className="primary" onClick={()=>onLoad(s)}>读取</button>}{s&&onDelete&&<button className="text-button" onClick={()=>onDelete(slot)}>删除</button>}</div></div>;})}</div>;}
 createRoot(document.getElementById('root')).render(<App/>);

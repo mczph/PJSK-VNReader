@@ -25,7 +25,7 @@ try{
  await page.evaluate(()=>{window.testHidden=false;document.dispatchEvent(new Event('visibilitychange'));});await page.waitForFunction(()=>!window.testAudio.at(-1).paused);
  await page.locator('.episode-row').first().click();await page.waitForFunction(()=>window.testAudio.at(-1).paused);
  await page.getByRole('button',{name:'取消进入',exact:true}).click();await page.waitForFunction(()=>!window.testAudio.at(-1).paused);
- await page.getByRole('button',{name:'活动剧情',exact:true}).click();await page.waitForFunction(()=>window.testAudio.every(a=>a.paused&&a.released));
+ await page.getByRole('button',{name:'活动剧情',exact:true}).click();await page.waitForFunction(()=>window.testAudio.slice(0,-1).every(a=>a.paused&&a.released)&&!window.testAudio.at(-1).paused&&window.testAudio.at(-1).src.includes('bgm00018'));
  await page.getByRole('button',{name:'主线剧情',exact:true}).click();await check('piapro');await page.getByRole('button',{name:'返回主界面',exact:true}).click();await page.waitForFunction(()=>window.testAudio.slice(0,-1).every(a=>a.paused&&a.released)&&!window.testAudio.at(-1).paused);
  console.log(JSON.stringify({allSixThemes:true,directorySwitch:true,loop:true,volume:true,backgroundPauseResume:true,downloadPauseAndCancelResume:true,leaveStopsAndReleases:true}));
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

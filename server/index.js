@@ -55,7 +55,7 @@ async function personalCatalogue(region,refresh=false){if(personals.has(region)&
 app.use((req,res,next)=>{if(req.query.region && !regions[req.query.region]) return res.status(400).json({error:'不支持的服务器'});next();});
 app.get('/api/catalog',async(req,res)=>{try {res.json(await (req.query.type==='personal'?personalCatalogue:catalogue)(req.query.region || 'jp',req.query.refresh === '1'));}catch(e){res.status(502).json({error:e.message});}});
 const casts=new Map();
-async function castFor(entry,region){const key=region+':'+entry.id;if(casts.has(key))return casts.get(key);const base=`https://sekai-world.github.io/${regions[region]}/`;const pending=(async()=>{const [raw,people,models]=await Promise.all([download(bucket(region)+entry.path).then(b=>JSON.parse(b.toString())),...['gameCharacters','character2ds'].map(n=>download(base+n+'.json').then(b=>JSON.parse(b.toString())))]);const characters=storyCharacters(raw,people,models);return {characters,total:normalizeStory(raw).lines.length};})();casts.set(key,pending);try{return await pending;}catch(e){casts.delete(key);throw e;}}
+async function castFor(entry,region){const key=region+':'+entry.id;if(casts.has(key))return casts.get(key);const base=`https://sekai-world.github.io/${regions[region]}/`;const pending=(async()=>{const [raw,people,models]=await Promise.all([download(bucket(region)+entry.path).then(b=>JSON.parse(b.toString())),...['gameCharacters','character2ds'].map(n=>download(base+n+'.json').then(b=>JSON.parse(b.toString())))]);const characters=storyCharacters(raw,people,models);const story=normalizeStory(raw);return {characters,total:story.lines.length,bgm:story.initial.bgm || story.lines.find(l=>l.scene.bgm)?.scene.bgm || ''};})();casts.set(key,pending);try{return await pending;}catch(e){casts.delete(key);throw e;}}
 app.get('/api/cast/:id',async(req,res)=>{try{const region=req.query.region || 'jp',entry=(await (/^(profile|card)-/.test(req.params.id)?personalCatalogue:catalogue)(region)).find(e=>e.id===req.params.id);if(!entry)return res.status(404).json({error:'章节不存在'});res.json(await castFor(entry,region));}catch(e){res.status(502).json({error:e.message});}});
 app.get('/api/runtime/cubism',async(req,res)=>{
   try{res.type('js').send(await download('https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js'));}catch(e){res.status(502).send(e.message);}
@@ -77,7 +77,7 @@ async function prepare(entry,region,retain=false){
         const story=normalizeStory(JSON.parse((await download(bucket(region)+entry.path)).toString()));
         story.voiceType=entry.personalType==='card'?'card':'scenario';
         const {characters}=await castFor(entry,region).catch(()=>({characters:[]}));
-        job.story={...story,entry,region,characters}; const paths=[...new Set([...mediaPaths(story),entry.type==='main'&&unitBgmPath(entry.unit),entry.cover,entry.poster,entry.posterTitle,...characters.map(c=>c.avatar)].filter(Boolean))];job.total=paths.length;job.status='media';
+        job.story={...story,entry,region,characters}; const paths=[...new Set([...mediaPaths(story),(entry.type==='main'||entry.type==='personal')&&unitBgmPath(entry.unit),entry.cover,entry.poster,entry.posterTitle,...characters.map(c=>c.avatar)].filter(Boolean))];job.total=paths.length;job.status='media';
         let cursor=0;
         await Promise.all(Array.from({length:4},async()=>{while(cursor<paths.length){const p=paths[cursor++];try{await getAsset(region,p);}catch{job.missing.push(p);}job.done++;}}));
         job.status='models';

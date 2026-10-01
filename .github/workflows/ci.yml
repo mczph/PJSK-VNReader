@@ -29,3 +29,5 @@ jobs:
         run: node scripts/shortcuts-smoke.mjs
       - name: Unit music transitions
         run: node scripts/unit-bgm-smoke.mjs
+      - name: Save archive, music and screen layout
+        run: node scripts/presentation-smoke.mjs

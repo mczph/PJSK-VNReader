@@ -47,14 +47,14 @@ try{
  await next.waitForFunction(()=>window.__sounds.some(a=>a.src.includes('bgm_area00002')&&!a.paused&&a.currentTime>.1),null,{timeout:45000});
  await next.evaluate(()=>window.sekaiDesktop.minimize());await next.waitForFunction(()=>window.__sounds.every(a=>a.paused));
  await next.evaluate(()=>window.sekaiDesktop.restore());await next.waitForFunction(()=>window.__sounds.some(a=>a.src.includes('bgm_area00002')&&!a.paused));
- await next.getByRole('button',{name:'个人剧情',exact:true}).click();await next.waitForFunction(()=>window.__sounds.every(a=>a.paused));
+ await next.getByRole('button',{name:'个人剧情',exact:true}).click();await next.waitForFunction(()=>window.__sounds.some(a=>a.src.includes('bgm_area')&&!a.paused));
  await next.getByLabel('剧情角色').selectOption('1');await next.waitForFunction(()=>document.querySelectorAll('.episode-row').length===2);
  await next.waitForFunction(()=>{const i=document.querySelector('.poster-image');return i?.complete&&i.naturalWidth>300;});await next.screenshot({path:'artifacts/desktop-personal.png'});
  await next.locator('.episode-row').first().click();await next.locator('.dialogue').waitFor({timeout:150000});
  await next.waitForFunction(()=>window.__draws>0&&window.__sounds.some(a=>!a.paused&&a.currentTime>.1),null,{timeout:20000}).catch(async error=>{console.log(await next.evaluate(()=>({draws:window.__draws,models:document.querySelector('.live2d-host')?.dataset.models,paused:document.hidden,sounds:window.__sounds?.map(a=>({src:a.src,paused:a.paused,time:a.currentTime,error:a.error?.message})),text:document.body.innerText.slice(-800)})));throw error;});
  assert.equal(await next.locator('.live2d-host').getAttribute('data-fps'),'30');
  await next.keyboard.press('a');assert.equal(await next.getByRole('button',{name:'自动',exact:true}).evaluate(e=>e.classList.contains('on')),true);await next.keyboard.press('a');
- await next.keyboard.press('Shift+S');await next.getByRole('heading',{name:'保存这一刻',exact:true}).waitFor();await next.keyboard.press('Escape');await next.keyboard.press('F5');await next.waitForFunction(()=>JSON.parse(localStorage.getItem('sekai.saves'))?.['快速']);
+ await next.keyboard.press('Shift+S');await next.getByRole('heading',{name:'保存这一刻',exact:true}).waitFor();await next.getByRole('button',{name:'存档第 4 页',exact:true}).click();await next.locator('.save-card').last().getByRole('button',{name:'保存',exact:true}).click();await next.waitForFunction(()=>JSON.parse(localStorage.getItem('sekai.saves'))?.['48']);await next.keyboard.press('Escape');await next.keyboard.press('F5');await next.waitForFunction(()=>JSON.parse(localStorage.getItem('sekai.saves'))?.['快速']);
  await next.keyboard.press('b');await next.locator('.backlog-modal').waitFor();await next.keyboard.press('Escape');
  await next.screenshot({path:'artifacts/desktop-player.png'});
  await next.getByRole('button',{name:'全屏',exact:true}).click();await next.waitForFunction(()=>window.sekaiDesktop.isFullscreen());await next.getByRole('button',{name:'全屏',exact:true}).click();await next.waitForFunction(async()=>!await window.sekaiDesktop.isFullscreen());

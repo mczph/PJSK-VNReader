@@ -148,10 +148,11 @@ export default function StoryStage({story,line,index,restore,skip,paused,setting
  },[ready,line,index,restore,skip,settings.effects]);
  const camera=scene.camera || empty.camera;
  return <div className="story-stage" data-ready={ready} data-paused={paused} data-actors={Object.keys(scene.actors || {}).length} data-background={scene.background} data-shake={shake} data-memory={scene.memory} data-camera={scene.camera?.zoom} data-particles={scene.particles}>
-  <div ref={world} className={'stage-world '+(shake==='world'?'shaking':'')} style={{transform:`translate(${camera.x*100}%,${camera.y*100}%) scale(${camera.zoom})`,transition:`transform ${restore||skip?0:(camera.duration || 0.6)}s`,filter:scene.memory?'sepia(.55)':undefined}}>
+  <div className="stage-visual-frame"><div ref={world} className={'stage-world '+(shake==='world'?'shaking':'')} style={{transform:`translate(${camera.x*100}%,${camera.y*100}%) scale(${camera.zoom})`,transition:`transform ${restore||skip?0:(camera.duration || 0.6)}s`,filter:scene.memory?'sepia(.55)':undefined}}>
    <div className="stage-background" style={{backgroundImage:scene.background?`url("${url(story.region,`scenario/background/${scene.background}/${scene.background}.webp`)}")`:undefined,filter:scene.textScreen?'blur(6px) brightness(.6)':scene.blur?'blur(6px)':undefined}}/>
    <div className="live2d-host" ref={host}/>
    {scene.particles&&<div className={'scenario-particles '+(/kirakira/.test(scene.particles)?'sparkles':/line/.test(scene.particles)?'speed-lines':/light/.test(scene.particles)?'light-rays':'dim-overlay')} aria-hidden="true">{Array.from({length:24},(_,i)=><i key={i} style={{'--i':i,left:((i*37)%100)+'%',top:((i*23)%100)+'%',animationDelay:-i*.19+'s',backgroundImage:story.effectAssets?.[scene.particles]?.textures?.[0]?`url("${story.effectAssets[scene.particles].textures[0]}")`:undefined}}/>)}</div>}
+  </div>
   </div>
   <div ref={cover} className="stage-cover"/>
   {scene.fullText&&<div className="fullscreen-text" style={{fontFamily:'var(--novel-font)',fontSize:settings.font}}>{line.kind==='fullscreen'?scene.fullText?.replace(/<[^>]+>/g,'').slice(0,textVisible):scene.fullText}</div>}
